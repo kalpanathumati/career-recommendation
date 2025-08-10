@@ -1,19 +1,33 @@
-from dotenv import load_dotenv
 import os
-from langchain_google_genai import ChatGoogleGenerativeAI
-from langchain_core.messages import HumanMessage
+import requests
 
-load_dotenv()
 GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
 
-if not GOOGLE_API_KEY:
-    raise ValueError("Please set the GOOGLE_API_KEY in the .env file.")
-
-chat = ChatGoogleGenerativeAI(model="gemini-2.0-flash", temperature=0.7)
-
 def query_gemini(prompt: str) -> str:
-    try:
-        response = chat.invoke([HumanMessage(content=prompt)])
-        return response.content
-    except Exception as e:
-        return f"❌ Gemini API error: {str(e)}"
+    """
+    Calls Gemini 2.0 Flash API for text generation.
+    """
+    url = "https://generativelanguage.googleapis.com/v1beta2/models/chat-bison-001:generateMessage"
+    
+    headers = {
+        "Content-Type": "application/json",
+        "Authorization": f"Bearer {GOOGLE_API_KEY}"
+    }
+    
+    data = {
+        "prompt": {
+            "messages": [
+                {"content": prompt, "role": "user"}
+            ]
+        },
+        "temperature": 0.7,
+        "maxTokens": 512,
+    }
+    
+    response = requests.post(url, headers=headers, json=data)
+    response.raise_for_status()
+    
+    result = response.json()
+    # Extract generated text from response JSON
+    message = result.get("candidates", [{}])[0].get("content", "")
+    return message
