@@ -1,148 +1,129 @@
 import streamlit as st
 import json
 import os
-
 from dotenv import load_dotenv
 
-# Load environment variables from .env
-load_dotenv()
-
-# Import internal modules (after utils/__init__.py exists)
 from utils.roadmap_generator import generate_roadmap_text
 from utils.flowchart_visualizer import generate_flowchart
 from langchain_chain import get_recommendations
 from quiz_model import run_quiz
 
-# ───────────────────────────────────────────────
-# Load Paths
-CAREER_DB_PATH = 'database/career_db.json'
-USERS_JSON_PATH = 'database/users.json'
+# Load environment variables
+load_dotenv()
 
-# ───────────────────────────────────────────────
-# Load career database from JSON
-@st.cache_data
+# File paths
+CAREER_DB_PATH = "database/career_db.json"
+USERS_JSON_PATH = "database/users.json"
+
+# Load career database
 def load_career_db():
-    with open(CAREER_DB_PATH, 'r') as f:
-        return json.load(f)
-
-# Load users
-def load_users():
-    if not os.path.exists(USERS_JSON_PATH):
-        with open(USERS_JSON_PATH, 'w') as f:
-            json.dump({"users": []}, f)
-    with open(USERS_JSON_PATH, 'r') as f:
+    with open(CAREER_DB_PATH, "r", encoding="utf-8") as f:
         return json.load(f)
 
 # Save user data to JSON
-def save_user(user_data):
-    users = load_users()
-    users['users'].append(user_data)
-    with open(USERS_JSON_PATH, 'w') as f:
-        json.dump(users, f, indent=4)
+def save_user_data(user_data):
+    if not os.path.exists(USERS_JSON_PATH):
+        with open(USERS_JSON_PATH, "w") as f:
+            json.dump([], f)
 
-# ───────────────────────────────────────────────
-# Page Config and Styles
-st.set_page_config(page_title="AI Career Recommendation System", layout="wide")
+    with open(USERS_JSON_PATH, "r+") as f:
+        try:
+            existing = json.load(f)
+        except:
+            existing = []
+        existing.append(user_data)
+        f.seek(0)
+        json.dump(existing, f, indent=2)
 
-# Optional CSS Styling
-if os.path.exists("styles/custom.css"):
-    st.markdown(
-        f"<style>{open('styles/custom.css').read()}</style>",
-        unsafe_allow_html=True
-    )
-
-# ───────────────────────────────────────────────
-# Main App Interface
-
+# Load data
 career_db = load_career_db()
-st.title("🎓 AI Career Recommendation System")
 
-with st.form("user_input_form"):
-    st.header("Step 1: Enter Your Details")
+# Streamlit UI setup
+st.set_page_config(page_title="AI Career Recommendation", layout="wide")
+st.title("🎓 AI-Powered Career Recommendation System")
 
+st.header("Step 1: Enter Your Details")
+with st.form("user_form"):
     name = st.text_input("Your Name")
-    education_level = st.selectbox("Select your current academic stage:", options=list(career_db.keys()))
-    
-    subjects = st.multiselect("Subjects you like", [
-        "Mathematics", "Physics", "Chemistry", "Biology", "Computer Science", 
-        "English", "Economics", "History", "Geography"
-    ])
-
-    skills = st.multiselect("Your skills or hobbies", [
-        "Coding", "Communication", "Creativity", "Problem Solving", "Leadership",
-        "Teamwork", "Drawing", "Writing", "Sports"
-    ])
-
-    future_goals = st.text_area("Your future goals (optional)")
-
+    education_level = st.selectbox("Current Education Level", options=["10th"])
+    subjects = st.multiselect("Subjects you like", ["Maths", "Physics", "Biology", "Chemistry", "English"])
+    skills = st.multiselect("Your Skills / Hobbies", ["Coding", "Drawing", "Communication", "Problem Solving", "Leadership", "Creativity"])
+    take_quiz = st.checkbox("Take interest quiz for better results?")
     submitted = st.form_submit_button("Submit")
 
-# ───────────────────────────────────────────────
-# After submission
-if submitted and name and education_level:
-    st.success("✅ Details submitted successfully!")
+if submitted:
+    st.success("✔️ Data submitted. Now choose a path below.")
 
-    quiz_result = None
-    if st.checkbox("Take a short career interest quiz?"):
-        quiz_result = run_quiz()
-        st.info(f"Quiz Result: {quiz_result}")
+    st.session_state["user_data"] = {
+        "name": name,
+        "education": education_level,
+        "interests": subjects,
+        "skills": skills
+    }
 
-    # Step 3: Show education paths
-    paths = career_db.get(education_level, {}).get('paths', {})
-    if not paths:
-        st.warning("⚠️ No paths found for this education level.")
-    else:
-        st.header("Step 2: Choose an Education Path")
-        selected_path = st.radio("Available Options", options=list(paths.keys()))
+# Stop here if no user data yet
+if "user_data" not in st.session_state:
+    st.stop()
 
-        # Step 4: Career options
-        st.header("Step 3: Explore Career Options")
-        careers = career_db.get(selected_path, {}).get('careers', {})
-        if careers:
-            selected_career = st.selectbox("Select a career to explore in detail:", options=list(careers.keys()))
-            
-            # Step 5: AI Recommendations
-            st.header("Step 4: AI Career Recommendations")
-            user_profile = {
-                "name": name,
-                "education": education_level,
-                "interests": subjects,
-                "skills": skills,
-                "quiz_result": quiz_result or "",
-                "selected_path": selected_path
-            }
+user_data = st.session_state["user_data"]
 
-            try:
-                recommendation_text = get_recommendations(user_profile)
-                st.markdown("#### ✨ AI Recommendations")
-                st.write(recommendation_text)
-            except Exception as e:
-                st.error(f"Error from AI model: {e}")
+# Step 2: Show available paths
+st.header("Step 2: Choose an Education Path")
+available_paths = career_db.get("10th", {}).get("paths", {})
 
-            # Step 6: Roadmap
-            st.header("Step 5: Career Roadmap")
-            roadmap_text = generate_roadmap_text(education_level, selected_path, selected_career, careers[selected_career])
-            st.text_area("Career Roadmap (copy/save):", value=roadmap_text, height=250)
+if not available_paths:
+    st.error("❌ No paths found in database for this education level.")
+    st.stop()
 
-            # Step 7: Flowchart
-            st.header("Step 6: Visual Flowchart")
-            graph = generate_flowchart(education_level, selected_path, careers)
-            st.graphviz_chart(graph)
+selected_path = st.selectbox("Available Options", list(available_paths.keys()))
+st.session_state["selected_path"] = selected_path
 
-            # Step 8: Save Profile
-            if st.button("💾 Save My Career Profile"):
-                user_data = {
-                    "name": name,
-                    "education_level": education_level,
-                    "interests": subjects,
-                    "skills": skills,
-                    "quiz_result": quiz_result or "",
-                    "selected_path": selected_path,
-                    "recommended_careers": list(careers.keys())
-                }
-                save_user(user_data)
-                st.success("🎉 Career profile saved successfully!")
-        else:
-            st.warning("No career data found for this path.")
-elif submitted:
-    st.warning("Please fill in your name and select an education level.")
+# Step 3: Show career options for selected path
+st.header("Step 3: Explore Career Options")
+
+career_options = career_db.get(selected_path, {}).get("careers", {})
+
+if not career_options:
+    st.warning("⚠️ No career data found for this path in the database.")
+    st.stop()
+
+selected_career = st.selectbox("Select a Career", list(career_options.keys()))
+career_data = career_options.get(selected_career)
+
+# Step 4: Show AI recommendations
+st.header("Step 4: AI Career Recommendation")
+
+if take_quiz:
+    quiz_result = run_quiz()
+    user_data["quiz_result"] = quiz_result
+else:
+    user_data["quiz_result"] = "Not specified"
+
+user_data["selected_path"] = selected_path
+
+recommendation = get_recommendations(user_data)
+st.write(recommendation)
+
+# Step 5: Show roadmap
+st.header("Step 5: Career Roadmap")
+roadmap_text = generate_roadmap_text(
+    current_stage=user_data["education"],
+    path=selected_path,
+    selected_career=selected_career,
+    career_data=career_data
+)
+st.text_area("Career Roadmap", roadmap_text, height=250)
+
+# Step 6: Flowchart Visualization
+st.header("Step 6: Visual Flowchart")
+st.graphviz_chart(generate_flowchart(user_data["education"], selected_path, career_options))
+
+# Step 7: Save Option
+if st.button("💾 Save Career Plan"):
+    save_user_data({
+        "user": user_data,
+        "selected_career": selected_career,
+        "roadmap": roadmap_text,
+        "recommendation": recommendation
+    })
+    st.success("Profile saved successfully!")
