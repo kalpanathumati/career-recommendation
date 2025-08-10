@@ -34,6 +34,7 @@ def save_user_data(user_data):
         existing.append(user_data)
         f.seek(0)
         json.dump(existing, f, indent=2)
+        f.truncate()
 
 # Load data
 career_db = load_career_db()
@@ -52,14 +53,17 @@ with st.form("user_form"):
     submitted = st.form_submit_button("Submit")
 
 if submitted:
-    st.success("✔️ Data submitted. Now choose a path below.")
+    if not name or not education_level:
+        st.error("Please fill in all required fields.")
+    else:
+        st.success("✔️ Data submitted. Now choose a path below.")
 
-    st.session_state["user_data"] = {
-        "name": name,
-        "education": education_level,
-        "interests": subjects,
-        "skills": skills
-    }
+        st.session_state["user_data"] = {
+            "name": name,
+            "education": education_level,
+            "interests": subjects,
+            "skills": skills
+        }
 
 # Stop here if no user data yet
 if "user_data" not in st.session_state:
@@ -69,7 +73,7 @@ user_data = st.session_state["user_data"]
 
 # Step 2: Show available paths
 st.header("Step 2: Choose an Education Path")
-available_paths = career_db.get("10th", {}).get("paths", {})
+available_paths = career_db.get(user_data["education"], {}).get("paths", {})
 
 if not available_paths:
     st.error("❌ No paths found in database for this education level.")
@@ -88,7 +92,7 @@ if not career_options:
     st.stop()
 
 selected_career = st.selectbox("Select a Career", list(career_options.keys()))
-career_data = career_options.get(selected_career)
+career_data = career_options.get(selected_career, {})
 
 # Step 4: Show AI recommendations
 st.header("Step 4: AI Career Recommendation")
@@ -106,17 +110,26 @@ st.write(recommendation)
 
 # Step 5: Show roadmap
 st.header("Step 5: Career Roadmap")
-roadmap_text = generate_roadmap_text(
-    current_stage=user_data["education"],
-    path=selected_path,
-    selected_career=selected_career,
-    career_data=career_data
-)
-st.text_area("Career Roadmap", roadmap_text, height=250)
+
+try:
+    roadmap_text = generate_roadmap_text(
+        current_stage=user_data["education"],
+        selected_path=selected_path,
+        selected_career=selected_career,
+        career_info=career_data
+    )
+    st.text_area("Career Roadmap", roadmap_text, height=250)
+except Exception as e:
+    st.error(f"Error generating roadmap: {e}")
 
 # Step 6: Flowchart Visualization
 st.header("Step 6: Visual Flowchart")
-st.graphviz_chart(generate_flowchart(user_data["education"], selected_path, career_options))
+
+try:
+    graphviz_source = generate_flowchart(user_data["education"], selected_path, career_options)
+    st.graphviz_chart(graphviz_source)
+except Exception as e:
+    st.error(f"Error generating flowchart: {e}")
 
 # Step 7: Save Option
 if st.button("💾 Save Career Plan"):
