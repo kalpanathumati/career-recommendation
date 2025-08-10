@@ -1,6 +1,7 @@
 streamlit
 langchain
-openai
+langchain-community
+google-generativeai
 huggingface-hub
 graphviz
 python-dotenv
