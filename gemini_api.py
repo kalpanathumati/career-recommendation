@@ -1,22 +1,23 @@
-from langchain_google_genai import ChatGoogleGenerativeAI
-from langchain_core.messages import HumanMessage
 from dotenv import load_dotenv
 import os
 
-# Load API key from .env
+from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain_core.messages import HumanMessage
+
+# Load environment variable
 load_dotenv()
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 
-# Initialize Gemini model
+# Create Gemini Chat model
 chat = ChatGoogleGenerativeAI(
-    model="gemini-pro",
+    model="gemini-1.5-flash",
     google_api_key=GEMINI_API_KEY,
     temperature=0.7
 )
 
 def query_gemini(prompt: str) -> str:
     """
-    Send prompt to Gemini and return the response.
+    Send a prompt to Gemini and return its response.
     """
     try:
         response = chat.invoke([HumanMessage(content=prompt)])
