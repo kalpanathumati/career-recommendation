@@ -9,7 +9,7 @@ GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
 if not GOOGLE_API_KEY:
     raise ValueError("Please set the GOOGLE_API_KEY in the .env file.")
 
-chat = ChatGoogleGenerativeAI(model="gemini-2.5-pro", temperature=0.7)
+chat = ChatGoogleGenerativeAI(model="gemini-2.0-flash", temperature=0.7)
 
 def query_gemini(prompt: str) -> str:
     try:
