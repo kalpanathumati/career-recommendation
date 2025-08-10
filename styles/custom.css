@@ -1,0 +1,39 @@
+/* Customize Streamlit buttons */
+.stButton>button {
+    background-color: #4A90E2;
+    color: white;
+    border-radius: 8px;
+    padding: 8px 20px;
+    font-weight: 600;
+}
+
+.stButton>button:hover {
+    background-color: #357ABD;
+}
+
+/* Style headers */
+h1, h2, h3 {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    color: #2C3E50;
+}
+
+/* Customize radio buttons */
+.stRadio > div {
+    margin-bottom: 12px;
+}
+
+/* Text inputs and selects */
+.stTextInput>div>input, .stSelectbox>div>select {
+    border-radius: 6px;
+    border: 1px solid #ccc;
+    padding: 8px;
+}
+
+/* Career roadmap text area */
+textarea[readonly] {
+    background-color: #F9F9F9;
+    border: 1px solid #ddd;
+    padding: 10px;
+    font-family: monospace;
+    white-space: pre-wrap;
+}
