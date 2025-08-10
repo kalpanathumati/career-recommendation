@@ -1,0 +1,28 @@
+{
+  "10th": {
+    "paths": {
+      "Intermediate_MPC": ["B.Tech", "B.Sc (Maths)", "NDA"],
+      "Intermediate_BiPC": ["MBBS", "BDS", "B.Sc (Life Sciences)", "Pharmacy"],
+      "Diploma": ["Polytechnic", "Graphic Design", "Hotel Management"],
+      "ITI": ["Electrician", "Fitter", "Mechanic"]
+    }
+  },
+  "Intermediate_BiPC": {
+    "careers": {
+      "MBBS": {
+        "skills": ["Biology", "Patience", "Problem Solving"],
+        "entrance": ["NEET"],
+        "salary_range": "₹8–20 LPA",
+        "growth": "High",
+        "resources": ["https://nta.ac.in/NEET", "https://www.aiims.edu"]
+      },
+      "Pharmacy": {
+        "skills": ["Chemistry", "Attention to Detail"],
+        "entrance": ["EAMCET"],
+        "salary_range": "₹3–8 LPA",
+        "growth": "Moderate",
+        "resources": ["https://pharmacycouncil.org", "https://niper.nic.in"]
+      }
+    }
+  }
+}
